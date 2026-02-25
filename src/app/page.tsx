@@ -9,7 +9,18 @@ import { MediaType, IMediaMetadata } from '@/types/media';
 import { Film, Tv, Book, Play, LogOut, Search, Bell, Loader2, Sparkles } from 'lucide-react';
 import { MovieCard } from '@/components/ui/MovieCard';
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+// Nâng cấp fetcher để bắt các HTTP Error Response
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  const data = await res.json();
+
+  // Nếu status không phải 2xx, ép văng lỗi để SWR chuyển vào biến 'error'
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to fetch data');
+  }
+
+  return data;
+};
 
 const RecommendationSection = () => {
   const { data, isLoading } = useSWR('/api/recommend', fetcher);
