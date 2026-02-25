@@ -13,12 +13,19 @@ export const runtime = 'edge';
  */
 export async function GET(req: NextRequest) {
     try {
-        // In a real scenario, we'd get the user from auth session
-        // For this API, we can either pass user_id or use the active session
-        const { data: { user } } = await supabase.auth.getUser();
+        // 1. Bóc tách Token từ Header do Frontend truyền lên
+        const authHeader = req.headers.get('Authorization');
+        const token = authHeader?.replace('Bearer ', '');
 
-        if (!user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        if (!token) {
+            return NextResponse.json({ error: 'Unauthorized - Missing Token' }, { status: 401 });
+        }
+
+        // 2. Định danh người dùng bằng Token
+        const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+        if (authError || !user) {
+            return NextResponse.json({ error: 'Invalid Token' }, { status: 401 });
         }
 
         // 1. Fetch recent watch progress (limit to last 20 items for profile building)

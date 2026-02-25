@@ -14,8 +14,13 @@ export async function GET(req: NextRequest) {
     const id = searchParams.get('id');
     const action = searchParams.get('action') || 'metadata';
 
-    if (!type || !id) {
-        return NextResponse.json({ error: 'Missing type or id' }, { status: 400 });
+    if (!type) {
+        return NextResponse.json({ error: 'Missing type' }, { status: 400 });
+    }
+
+    // Nếu không phải action trending thì bắt buộc phải có ID
+    if (action !== 'trending' && !id) {
+        return NextResponse.json({ error: 'Missing id' }, { status: 400 });
     }
 
     try {
@@ -23,7 +28,7 @@ export async function GET(req: NextRequest) {
 
         // Metadata handling (Shared across all providers via IBaseProvider)
         if (action === 'metadata') {
-            const data = await provider.fetchMetadata(id);
+            const data = await provider.fetchMetadata(id!);
             return NextResponse.json(data, {
                 headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' }
             });
@@ -39,7 +44,7 @@ export async function GET(req: NextRequest) {
             }
 
             const videoProvider = MediaFactory.getVideoProvider(type as any);
-            const data = await videoProvider.fetchStream(id, episode, season);
+            const data = await videoProvider.fetchStream(id!, episode, season);
             return NextResponse.json(data);
         }
 
@@ -54,12 +59,12 @@ export async function GET(req: NextRequest) {
             }
 
             const mangaProvider = MediaFactory.getMangaProvider();
-            const data = await mangaProvider.fetchPages(id, chapterId);
+            const data = await mangaProvider.fetchPages(id!, chapterId);
             return NextResponse.json(data);
         }
 
         if (action === 'trending') {
-            const data = await provider.fetchTrending(type);
+            const data = await provider.fetchTrending(type!);
             return NextResponse.json(data, {
                 headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' }
             });

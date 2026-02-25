@@ -3,15 +3,25 @@
 import React, { useState } from 'react';
 import useSWR from 'swr';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
 import { AuthForm } from '@/components/auth/AuthForm';
 import { DashboardGrid } from '@/components/dashboard/DashboardGrid';
 import { MediaType, IMediaMetadata } from '@/types/media';
 import { Film, Tv, Book, Play, LogOut, Search, Bell, Loader2, Sparkles } from 'lucide-react';
 import { MovieCard } from '@/components/ui/MovieCard';
 
-// Nâng cấp fetcher để bắt các HTTP Error Response
+// Nâng cấp fetcher để bắt các HTTP Error Response và gửi Token
 const fetcher = async (url: string) => {
-  const res = await fetch(url);
+  // 1. Lấy token của user đang đăng nhập
+  const { data: { session } } = await supabase.auth.getSession();
+  const headers: Record<string, string> = {};
+
+  // 2. Gắn Token vào Header Authorization
+  if (session?.access_token) {
+    headers['Authorization'] = `Bearer ${session.access_token}`;
+  }
+
+  const res = await fetch(url, { headers });
   const data = await res.json();
 
   // Nếu status không phải 2xx, ép văng lỗi để SWR chuyển vào biến 'error'
