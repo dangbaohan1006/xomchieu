@@ -41,6 +41,7 @@ export const VideoPlayer = ({ src: initialSrc, mediaId, type, season, episode, m
     const hlsRef = useRef<Hls | null>(null);
     const [streamUrl, setStreamUrl] = useState<string | null>(initialSrc || null);
     const [loading, setLoading] = useState(!initialSrc && !!mediaId);
+    const [isIframe, setIsIframe] = useState(false); // Thêm state này
 
     // Atomic Selectors
     const isPlaying = useVideoPlaybackStore((state) => state.isPlaying);
@@ -71,6 +72,8 @@ export const VideoPlayer = ({ src: initialSrc, mediaId, type, season, episode, m
 
                     if (data && data[0]?.url) {
                         setStreamUrl(data[0].url);
+                        // Nhận diện nếu Provider trả về dạng iframe
+                        setIsIframe(data[0].quality === 'iframe');
                     }
                 } catch (error) {
                     console.error('[Player Fetch Error]', error);
@@ -143,6 +146,27 @@ export const VideoPlayer = ({ src: initialSrc, mediaId, type, season, episode, m
             setDuration(videoRef.current.duration);
         }
     };
+
+    if (isIframe && streamUrl) {
+        return (
+            <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-black">
+                <ProgressSyncer
+                    mediaId={mediaId}
+                    type={type}
+                    metadata={metadata}
+                    season={season}
+                    episode={episode}
+                />
+                <iframe
+                    src={streamUrl}
+                    className="w-full h-full border-0"
+                    allowFullScreen
+                    // Sức mạnh nằm ở đây: Chặn toàn bộ popup quảng cáo nhảy tab mới
+                    sandbox="allow-scripts allow-same-origin allow-presentation"
+                />
+            </div>
+        );
+    }
 
     return (
         <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-black group">
